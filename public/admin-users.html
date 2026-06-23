@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Kelola User</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="bg-slate-100 min-h-screen">
+    <div class="max-w-6xl mx-auto p-8">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold text-slate-800">👥 Kelola User</h1>
+
+        <a href="feed.html" class="bg-blue-600 text-white px-4 py-2 rounded-xl">
+          Kembali
+        </a>
+      </div>
+
+      <div class="bg-white rounded-3xl shadow-sm overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="text-left px-6 py-4">Nama</th>
+
+              <th class="text-left px-6 py-4">Email</th>
+
+              <th class="text-left px-6 py-4">Role</th>
+
+              <th class="text-left px-6 py-4">Status</th>
+
+              <th class="text-center px-6 py-4">Aksi</th>
+            </tr>
+          </thead>
+
+          <tbody id="user-container"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

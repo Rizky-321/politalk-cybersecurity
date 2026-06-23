@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detail Diskusi - Politalk Polibatam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="app-bg text-slate-800 pb-12">
+    <nav
+      class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-blue-100 shadow-sm"
+    >
+      <div class="max-w-7xl mx-auto px-4 min-h-16 py-3 flex items-center gap-4">
+        <div class="flex items-center gap-4">
+          <a
+            href="feed.html"
+            class="text-blue-700 hover:bg-blue-50 p-2 rounded-xl transition"
+            aria-label="Kembali ke feed"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+          </a>
+          <h1 class="text-xl font-extrabold text-blue-700 tracking-tighter">
+            POLITALK
+          </h1>
+          <div class="hidden lg:flex items-center gap-1">
+            <a
+              href="feed.html"
+              class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-blue-700 hover:bg-blue-50"
+              >Home</a
+            >
+            <a
+              href="feed.html?search=PBL"
+              class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-blue-700 hover:bg-blue-50"
+              >Kategori</a
+            >
+            <button
+              data-trending-search="PBL"
+              class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-blue-700 hover:bg-blue-50"
+              type="button"
+            >
+              Trending
+            </button>
+          </div>
+        </div>
+        <div class="relative flex-1 max-w-xl hidden md:block">
+          <input
+            id="global-search"
+            type="search"
+            placeholder="Cari topik, kategori, atau user..."
+            class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white"
+          />
+          <div
+            id="search-results"
+            class="hidden absolute left-0 right-0 top-12 bg-white border border-blue-50 rounded-2xl shadow-xl overflow-hidden z-[60]"
+          ></div>
+        </div>
+        <div class="ml-auto flex items-center gap-3">
+          <button
+            id="mobile-menu-button"
+            class="lg:hidden w-10 h-10 rounded-xl bg-blue-50 text-blue-700 font-extrabold"
+            type="button"
+          >
+            ☰
+          </button>
+          <a
+            href="profile.html"
+            id="header-profile-avatar"
+            class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs"
+            >BP</a
+          >
+        </div>
+      </div>
+      <div
+        id="mobile-menu"
+        class="hidden lg:hidden max-w-7xl mx-auto px-4 pb-4"
+      >
+        <div class="flex flex-wrap gap-2">
+          <a
+            href="feed.html"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50"
+            >Home</a
+          >
+          <a
+            href="feed.html?search=PBL"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50"
+            >Kategori</a
+          >
+          <a
+            href="profile.html"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50"
+            >Profil</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <div
+      class="max-w-5xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6"
+    >
+      <main class="lg:col-span-8 space-y-4">
+        <article
+          class="bg-white rounded-[2rem] border border-blue-50 shadow-sm p-6"
+        >
+          <div class="flex items-center gap-3 mb-6">
+            <div
+              id="detail-avatar"
+              class="w-10 h-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-700 font-bold"
+            >
+              IF
+            </div>
+            <div>
+              <p id="detail-author" class="text-sm font-bold text-slate-800">
+                Andi Informatika
+              </p>
+              <p class="text-[10px] text-slate-400 font-semibold uppercase">
+                <span id="detail-time">30 Menit Lalu</span>
+                <span class="text-blue-600">#PBLPolibatam</span>
+              </p>
+            </div>
+          </div>
+
+          <h2
+            id="detail-title"
+            class="text-2xl font-extrabold text-slate-900 mb-4 leading-tight"
+          >
+            Ada yang ngerti cara setting server di Lab Tower lantai 6?
+          </h2>
+          <div
+            id="detail-content"
+            class="text-[15px] font-semibold text-slate-700 leading-relaxed space-y-4 mb-8"
+          ></div>
+
+          <div
+            id="detail-actions"
+            class="flex flex-wrap items-center gap-4 sm:gap-6 border-t border-slate-50 pt-5"
+          >
+            <button
+              id="detail-upvote-button"
+              onclick="toggleDetailUpvote(this)"
+              data-post-id="server-lab-tower-6"
+              class="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-xs font-bold transition active:scale-95"
+              type="button"
+            >
+              <span>&uarr;</span> <span id="detail-upvotes">124 Upvotes</span>
+            </button>
+            <button
+              class="text-slate-400 hover:text-blue-600 text-xs font-bold"
+              type="button"
+            >
+              &#128278; Simpan
+            </button>
+            <button
+              class="text-slate-400 hover:text-blue-600 text-xs font-bold"
+              type="button"
+            >
+              &#128279; Bagikan
+            </button>
+          </div>
+        </article>
+
+        <section
+          class="bg-white rounded-[2rem] border border-blue-50 shadow-sm p-6"
+        >
+          <h3 id="comment-count" class="font-bold text-slate-800 mb-6">
+            Diskusi (0 Komentar)
+          </h3>
+
+          <div class="mb-8 flex gap-3">
+            <div
+              class="w-10 h-10 bg-slate-100 rounded-xl flex-shrink-0 flex items-center justify-center"
+            >
+              &#128100;
+            </div>
+            <div class="flex-1 space-y-2">
+              <textarea
+                id="comment-input"
+                placeholder="Tulis pendapatmu..."
+                class="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-semibold text-slate-700 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-400 outline-none resize-none"
+              ></textarea>
+              <div class="flex justify-end">
+                <button
+                  onclick="submitComment()"
+                  class="bg-blue-600 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition"
+                  type="button"
+                >
+                  Kirim Balasan
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="comments-list" class="space-y-6"></div>
+        </section>
+      </main>
+
+      <aside class="lg:col-span-4 space-y-6">
+        <div class="bg-white rounded-3xl p-6 border border-blue-50 shadow-sm">
+          <p
+            class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4"
+          >
+            Agenda Polibatam
+          </p>
+          <div class="space-y-4">
+            <div class="flex gap-4">
+              <div class="text-center">
+                <p class="text-xs font-bold text-blue-600">MEI</p>
+                <p class="text-xl font-black">10</p>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-slate-800">
+                  Expo PBL Polibatam
+                </p>
+                <p class="text-[10px] text-slate-400">Gedung Tower Lantai 1</p>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <div class="text-center">
+                <p class="text-xs font-bold text-blue-600">MEI</p>
+                <p class="text-xl font-black">15</p>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-slate-800">
+                  Seminar Cyber Security
+                </p>
+                <p class="text-[10px] text-slate-400">Auditorium Lt. 2</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="bg-blue-600 rounded-3xl p-6 text-white shadow-xl shadow-blue-100"
+        >
+          <h4 class="font-bold text-lg mb-2">Pusat Bantuan</h4>
+          <p class="text-xs text-blue-100 mb-4">
+            Butuh akses SIM/SIA atau kendala jaringan kampus?
+          </p>
+          <a
+            href="#"
+            class="block text-center bg-white text-blue-600 py-3 rounded-2xl text-xs font-extrabold hover:bg-blue-50 transition"
+            >Buka Portal IT</a
+          >
+        </div>
+      </aside>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

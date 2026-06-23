@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daftar Politalk - Forum Aspirasi Mahasiswa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    class="bg-blue-50 min-h-screen flex items-center justify-center p-4 pt-24"
+  >
+    <nav
+      class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-blue-100 shadow-sm"
+    >
+      <div class="max-w-7xl mx-auto px-4 min-h-16 py-3 flex items-center gap-4">
+        <a
+          href="feed.html"
+          class="text-2xl font-extrabold text-blue-700 tracking-tighter"
+          >POLITALK</a
+        >
+        <div class="ml-auto flex items-center gap-2">
+          <a
+            href="index.html"
+            class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-extrabold hover:bg-blue-700 transition"
+            >Masuk</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <div
+      class="max-w-4xl w-full bg-white rounded-[2rem] shadow-xl shadow-blue-100 overflow-hidden border border-blue-50 flex flex-col md:flex-row"
+    >
+      <div
+        class="hidden md:flex md:w-5/12 bg-blue-600 p-10 flex-col justify-between text-white"
+      >
+        <div>
+          <h2 class="text-3xl font-extrabold tracking-tighter mb-4">
+            POLITALK
+          </h2>
+          <p class="text-blue-100 text-sm leading-relaxed">
+            Bergabunglah dengan komunitas mahasiswa Polibatam. Suarakan
+            pendapatmu, kawal isu kampusmu.
+          </p>
+        </div>
+        <p
+          class="text-[10px] text-blue-300 font-bold tracking-widest uppercase"
+        >
+          Politalk Project v1.0
+        </p>
+      </div>
+
+      <div class="flex-1 p-8 md:p-12">
+        <div class="mb-8">
+          <h3 class="text-2xl font-extrabold text-slate-800">Buat Akun Baru</h3>
+          <p class="text-slate-400 text-sm">
+            Gunakan email kampus untuk verifikasi otomatis.
+          </p>
+        </div>
+
+        <form
+          id="register-form"
+          onsubmit="handleRegister(event)"
+          class="space-y-4"
+        >
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1"
+                >Nama Lengkap</label
+              >
+              <input
+                type="text"
+                id="reg-fullname"
+                placeholder="Nama sesuai KTM"
+                class="w-full px-5 py-3 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all text-sm"
+                required
+              />
+            </div>
+            <div>
+              <label
+                class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1"
+                >NIM</label
+              >
+              <input
+                type="text"
+                id="reg-nim"
+                placeholder="Contoh: 4332411021"
+                class="w-full px-5 py-3 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all text-sm"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1"
+              >Email Mahasiswa</label
+            >
+            <input
+              type="email"
+              id="reg-email"
+              placeholder="nim@student.polibatam.ac.id"
+              class="w-full px-5 py-3 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all text-sm"
+              required
+            />
+          </div>
+
+          <div>
+            <label
+              class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1"
+              >Password</label
+            >
+            <input
+              type="password"
+              id="reg-password"
+              placeholder="Minimal 8 karakter"
+              class="w-full px-5 py-3 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all text-sm"
+              required
+              minlength="8"
+            />
+          </div>
+
+          <div class="flex items-start gap-3 py-2">
+            <input
+              type="checkbox"
+              id="agree"
+              class="mt-1 w-4 h-4 rounded text-blue-600 border-slate-300"
+              required
+            />
+            <label for="agree" class="text-[11px] text-slate-500 leading-tight"
+              >Saya setuju dengan Panduan Komunitas Politalk.</label
+            >
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 transition shadow-lg shadow-blue-200 active:scale-95"
+          >
+            Daftar Sekarang
+          </button>
+        </form>
+
+        <div class="mt-8 pt-6 border-t border-slate-50 text-center">
+          <p class="text-sm text-slate-500 font-medium">
+            Sudah punya akun?
+            <a href="index.html" class="text-blue-600 font-bold hover:underline"
+              >Masuk di sini</a
+            >
+          </p>
+        </div>
+      </div>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

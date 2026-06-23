@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profil Akun - Politalk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="app-bg text-slate-800">
+    <nav
+      class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-blue-100 shadow-sm"
+    >
+      <div class="max-w-7xl mx-auto px-4 min-h-16 py-3 flex items-center gap-4">
+        <div class="flex items-center gap-4">
+          <a
+            href="feed.html"
+            class="text-blue-700 hover:bg-blue-50 p-2 rounded-xl transition"
+            aria-label="Kembali ke feed"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+          </a>
+          <h1 class="text-xl font-extrabold text-blue-700 tracking-tighter">
+            POLITALK
+          </h1>
+          <div class="hidden lg:flex items-center gap-1">
+            <a
+              href="feed.html"
+              class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-blue-700 hover:bg-blue-50"
+              >Home</a
+            >
+            <a
+              href="feed.html?search=PBL"
+              class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-blue-700 hover:bg-blue-50"
+              >Kategori</a
+            >
+            <button
+              data-trending-search="PBL"
+              class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-blue-700 hover:bg-blue-50"
+              type="button"
+            >
+              Trending
+            </button>
+          </div>
+        </div>
+        <div class="relative flex-1 max-w-xl hidden md:block">
+          <input
+            id="global-search"
+            type="search"
+            placeholder="Cari topik, kategori, atau user..."
+            class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white"
+          />
+          <div
+            id="search-results"
+            class="hidden absolute left-0 right-0 top-12 bg-white border border-blue-50 rounded-2xl shadow-xl overflow-hidden z-[60]"
+          ></div>
+        </div>
+        <div class="ml-auto flex items-center gap-3">
+
+          <a
+            href="profile.html"
+            id="header-profile-avatar"
+            class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-md shadow-blue-100"
+          >
+          </a>
+
+          <button
+            onclick="confirmLogout()"
+            class="text-sm font-semibold text-slate-600 hover:text-red-600"
+          >
+            Logout
+          </button>
+
+        </div>
+      </div>
+      <div
+        id="mobile-menu"
+        class="hidden lg:hidden max-w-7xl mx-auto px-4 pb-4"
+      >
+        <div class="flex flex-wrap gap-2">
+          <a
+            href="feed.html"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50"
+            >Home</a
+          >
+          <a
+            href="feed.html?search=PBL"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50"
+            >Kategori</a
+          >
+          <a
+            href="profile.html"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50"
+            >Profil</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <main
+      id="profile-page"
+      class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6"
+    >
+      <section class="lg:col-span-4 space-y-6">
+        <div
+          class="bg-white rounded-[2rem] border border-blue-50 shadow-sm overflow-hidden"
+        >
+          <div class="h-28 profile-cover"></div>
+          <div class="px-6 pb-6 -mt-12">
+            
+            <div class="mt-5">
+              <h2
+                <div
+                 class="bg-white rounded-[2rem] border border-blue-50 shadow-sm overflow-hidden"
+                >
+         <div class="p-6">
+
+          <div class="flex items-center gap-5">
+
+      <div class="bg-white rounded-[2rem] border border-blue-50 shadow-sm p-6">
+
+      <!-- HEADER -->
+      <div class="flex items-center gap-4">
+
+        <div
+          id="profile-avatar"
+          class="w-24 h-24 rounded-full bg-blue-600 text-white flex items-center justify-center text-3xl font-bold flex-shrink-0"
+        >
+          U
+        </div>
+
+        <div>
+          <h2 id="profile-name" class="text-3xl font-bold">
+            Loading...
+          </h2>
+
+          <p id="profile-nim" class="text-slate-500">
+            Loading...
+          </p>
+
+          <p id="profile-bio" class="text-slate-500 mt-2">
+            Loading...
+          </p>
+        </div>
+
+      </div>
+
+      <!-- GARIS -->
+      <hr class="my-6">
+
+      <!-- STATISTIK -->
+      <div class="grid grid-cols-2 text-center">
+
+        <div>
+          <div id="stat-posts" class="text-3xl font-bold text-blue-600">
+            0
+          </div>
+
+          <div class="text-sm text-slate-500">
+            DISKUSI
+          </div>
+        </div>
+
+        <div>
+          <div id="stat-upvotes" class="text-3xl font-bold text-pink-500">
+            0
+          </div>
+
+          <div class="text-sm text-slate-500">
+            LIKE
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BUTTON -->
+      <button
+        onclick="openProfileModal()"
+        class="w-full mt-6 bg-blue-600 text-white py-3 rounded-xl font-semibold"
+      >
+        Edit Profil
+      </button>
+
+    </div>
+      
+
+    </div>
+
+  </div>
+</div>
+
+        <div
+          class="bg-white rounded-[2rem] border border-blue-50 shadow-sm p-6"
+        >
+          <p
+            class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4"
+          >
+            Informasi Akun
+          </p>
+          <div class="space-y-4">
+            <div>
+              <p class="text-[10px] font-bold text-slate-400 uppercase">NIM</p>
+              <p id="profile-info-nim" class="text-sm font-bold text-slate-800">
+                33124010XX
+              </p>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-slate-400 uppercase">
+                Program Studi
+              </p>
+              <p id="profile-major" class="text-sm font-bold text-slate-800">
+                Teknik Informatika
+              </p>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-slate-400 uppercase">
+                Kampus
+              </p>
+              <p id="profile-campus" class="text-sm font-bold text-slate-800">
+                Polibatam
+              </p>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-slate-400 uppercase">
+                Bergabung
+              </p>
+              <p id="profile-joined" class="text-sm font-bold text-slate-800">
+                Mei 2026
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lg:col-span-8 space-y-6">
+
+        <div
+          class="bg-white rounded-[2rem] border border-blue-50 shadow-sm p-6"
+        >
+
+          <h2
+            class="text-2xl font-extrabold text-slate-900 text-center mb-6"
+          >
+            Postingan Saya
+          </h2>
+
+          <div
+            id="profile-posts-container"
+            class="space-y-4"
+          >
+
+            <div class="text-center py-10 text-slate-400">
+              Memuat postingan...
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+    </main>
+
+    <div
+      id="editPostModal"
+      class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4"
+    >
+      <div
+        class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+        onclick="closeEditPostModal()"
+      ></div>
+
+      <div
+        class="relative bg-white w-full max-w-lg rounded-[2rem] shadow-2xl p-8"
+      >
+        <h3 class="text-xl font-extrabold text-slate-800 mb-6">
+          Edit Postingan
+        </h3>
+
+        <div class="space-y-4">
+          <input
+            id="edit-post-title"
+            type="text"
+            placeholder="Judul..."
+            class="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-slate-200"
+          />
+
+          <textarea
+            id="edit-post-content"
+            rows="4"
+            placeholder="Isi postingan..."
+            class="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-slate-200"
+          ></textarea>
+
+          <button
+            onclick="savePostEdit()"
+            class="w-full bg-blue-600 text-white font-extrabold py-4 rounded-2xl"
+          >
+            Simpan Perubahan
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+  id="editCommentModal"
+  class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50"
+>
+
+  <div class="bg-white rounded-2xl p-6 w-full max-w-md">
+
+    <h2 class="text-xl font-bold mb-4">
+      Edit Komentar
+    </h2>
+
+    <textarea
+      id="edit-comment-content"
+      class="w-full border rounded-xl p-3 h-32"
+      placeholder="Tulis komentar..."
+    ></textarea>
+
+    <div class="flex gap-2 mt-4">
+
+      <button
+        onclick="saveCommentEdit()"
+        class="flex-1 bg-blue-600 text-white py-3 rounded-xl"
+      >
+        Simpan
+      </button>
+
+      <button
+        onclick="closeEditCommentModal()"
+        class="flex-1 border py-3 rounded-xl"
+      >
+        Batal
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+    
+    <div
+  id="editProfileModal"
+  class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50"
+>
+
+  <div class="bg-white rounded-2xl p-6 w-full max-w-md">
+
+    <h2 class="text-xl font-bold mb-4">
+      Edit Profil
+    </h2>
+
+    <div class="space-y-3">
+
+      <input
+        id="editNama"
+        type="text"
+        placeholder="Nama"
+        class="w-full border rounded-xl p-3"
+      >
+
+      <input
+        id="editNim"
+        type="text"
+        placeholder="NIM"
+        class="w-full border rounded-xl p-3"
+      >
+
+      <input
+        id="editProdi"
+        type="text"
+        placeholder="Program Studi"
+        class="w-full border rounded-xl p-3"
+      >
+
+      <textarea
+        id="editBio"
+        placeholder="Bio"
+        class="w-full border rounded-xl p-3 h-24"
+      ></textarea>
+
+    </div>
+
+    <div class="flex gap-2 mt-4">
+
+      <button
+        onclick="saveProfile()"
+        class="flex-1 bg-blue-600 text-white py-3 rounded-xl"
+      >
+        Simpan
+      </button>
+
+      <button
+        onclick="closeProfileModal()"
+        class="flex-1 border py-3 rounded-xl"
+      >
+        Batal
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

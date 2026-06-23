@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Masuk Politalk - Forum Mahasiswa Polibatam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    class="bg-blue-50 flex items-center justify-center min-h-screen p-6 pt-24"
+  >
+    <nav
+      class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-blue-100 shadow-sm"
+    >
+      <div class="max-w-7xl mx-auto px-4 min-h-16 py-3 flex items-center gap-4">
+        <a
+          href="index.html"
+          class="text-2xl font-extrabold text-blue-700 tracking-tighter"
+        >
+          POLITALK
+        </a>
+        <div class="ml-auto flex items-center gap-2">
+          <a
+            href="register.html"
+            class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-extrabold hover:bg-blue-700 transition"
+            >Daftar</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <div
+      class="max-w-2xl w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-blue-100 flex flex-col md:flex-row"
+    >
+      <div
+        class="hidden md:flex md:w-1/3 bg-blue-600 p-8 text-white flex-col justify-center"
+      >
+        <h2 class="text-2xl font-bold mb-4">Halo, Mahasiswa Polibatam!</h2>
+        <p class="text-blue-100 text-sm leading-relaxed">
+          Wadah diskusi khusus mahasiswa Politeknik Negeri Batam.
+        </p>
+      </div>
+
+      <div class="p-8 md:w-2/3">
+        <div class="mb-8">
+          <h1 class="text-2xl font-extrabold text-blue-700">
+            Masuk ke Politalk
+          </h1>
+          <p class="text-gray-400 text-sm">
+            Gunakan akun student untuk melanjutkan.
+          </p>
+        </div>
+
+        <div
+          id="error-msg"
+          class="hidden bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl mb-6 text-xs font-bold text-center"
+        ></div>
+
+        <!-- PERBAIKAN: Ditambahkan id="login-form" agar terdeteksi oleh script.js -->
+        <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+          <div>
+            <label
+              class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider"
+              >Email
+            </label>
+            <input
+              type="email"
+              id="login-email"
+              placeholder="yahyahy@gmail.com"
+              required
+              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-400 outline-none transition text-sm bg-slate-50"
+            />
+          </div>
+
+          <div>
+            <label
+              class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider"
+              >Password</label
+            >
+            <input
+              type="password"
+              id="login-password"
+              placeholder="Minimal 8 karakter"
+              required
+              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-400 outline-none transition text-sm bg-slate-50"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg mt-4 active:scale-95 transform"
+          >
+            Masuk Sekarang
+          </button>
+
+          <p class="text-center mt-4">
+            <a
+              href="forgot-password.html"
+              class="text-blue-600 text-sm hover:underline"
+            >
+              Lupa Password?
+            </a>
+          </p>
+        </form>
+
+        <div class="mt-8 pt-6 border-t border-gray-100 text-center">
+          <p class="text-sm text-gray-500">
+            Belum punya akun?
+            <a
+              href="register.html"
+              class="text-blue-600 font-bold hover:underline"
+              >Daftar di sini</a
+            >
+          </p>
+        </div>
+      </div>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
