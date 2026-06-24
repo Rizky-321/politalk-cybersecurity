@@ -42,22 +42,32 @@
           </h1>
           <div class="hidden lg:flex items-center gap-1">
             <a
-              href="feed.html"
-              class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-blue-700 hover:bg-blue-50"
-              >Home</a
-            >
-            <a
-              href="feed.html?search=PBL"
-              class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-blue-700 hover:bg-blue-50"
-              >Kategori</a
-            >
-            <button
-              data-trending-search="PBL"
-              class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-blue-700 hover:bg-blue-50"
-              type="button"
-            >
-              Trending
-            </button>
+            href="feed.html"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50"
+          >
+            Home
+          </a>
+
+          <a
+            href="trending.html"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500"
+          >
+            Trending
+          </a>
+
+          <a
+            href="event.html"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500"
+          >
+            Event
+          </a>
+
+          <a
+            href="komunitas.html"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500"
+          >
+            Komunitas
+          </a>
           </div>
         </div>
         <div class="relative flex-1 max-w-xl hidden md:block">
@@ -98,18 +108,30 @@
           <a
             href="feed.html"
             class="px-3 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50"
-            >Home</a
           >
+            Home
+          </a>
+
           <a
-            href="feed.html?search=PBL"
-            class="px-3 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50"
-            >Kategori</a
+            href="trending.html"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500"
           >
+            Trending
+          </a>
+
           <a
-            href="profile.html"
-            class="px-3 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50"
-            >Profil</a
+            href="event.html"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500"
           >
+            Event
+          </a>
+
+          <a
+            href="komunitas.html"
+            class="px-3 py-2 rounded-xl text-xs font-bold text-slate-500"
+          >
+            Komunitas
+          </a>
         </div>
       </div>
     </nav>
@@ -244,6 +266,46 @@
               <p id="profile-joined" class="text-sm font-bold text-slate-800">
                 Mei 2026
               </p>
+              <hr class="my-6">
+              <p
+                class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4"
+              >
+                Keamanan Akun
+              </p>
+
+              <div class="space-y-3">
+
+                <div
+                  id="mfa-status"
+                  class="text-sm font-bold text-red-500"
+                >
+                  MFA : Tidak Aktif
+                </div>
+
+                <button
+                  id="btn-enable-mfa"
+                  onclick="enableMFA()"
+                  class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
+                >
+                  Aktifkan MFA
+                </button>
+
+                <button
+                  id="btn-disable-mfa"
+                  onclick="disableMFA()"
+                  class="hidden w-full bg-red-600 text-white py-3 rounded-xl font-semibold"
+                >
+                  Nonaktifkan MFA
+                </button>
+
+                <button
+                  onclick="openChangePasswordModal()"
+                  class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold"
+                >
+                  Ganti Password
+                </button>
+
+              </div>
             </div>
           </div>
         </div>
@@ -418,6 +480,61 @@
 
   </div>
 
+</div>
+
+<div
+  id="changePasswordModal"
+  class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50"
+>
+  <div class="bg-white p-6 rounded-2xl w-[400px]">
+    <h2 class="text-xl font-bold mb-4">Ganti Password</h2>
+
+    <input
+      type="password"
+      id="oldPassword"
+      placeholder="Password Lama"
+      class="w-full border p-2 rounded mb-3"
+    />
+
+    <input
+      type="password"
+      id="newPassword"
+      placeholder="Password Baru"
+      class="w-full border p-2 rounded mb-3"
+    />
+
+    <input
+      type="password"
+      id="confirmPassword"
+      placeholder="Konfirmasi Password Baru"
+      class="w-full border p-2 rounded mb-3"
+    />
+
+    <div id="otpSection" class="hidden">
+      <input
+        type="text"
+        id="otpCode"
+        placeholder="Kode OTP"
+        class="w-full border p-2 rounded mb-3"
+      />
+    </div>
+
+    <div class="flex gap-2">
+      <button
+        onclick="submitChangePassword()"
+        class="flex-1 bg-blue-600 text-white py-2 rounded"
+      >
+        Simpan
+      </button>
+
+      <button
+        onclick="closeChangePasswordModal()"
+        class="flex-1 bg-gray-300 py-2 rounded"
+      >
+        Batal
+      </button>
+    </div>
+  </div>
 </div>
 
     <script src="script.js"></script>

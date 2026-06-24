@@ -5,7 +5,9 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const fs = require("fs");
 const path = require("path");
-const bcrypt = require("bcryptjs"); // Menggunakan bcryptjs yang sudah ada di package.json Anda
+const bcrypt = require("bcryptjs");
+const speakeasy = require("speakeasy");
+const QRCode = require("qrcode"); // Menggunakan bcryptjs yang sudah ada di package.json Anda
 const multer = require("multer");
 const helmet = require("helmet");
 const xss = require("xss");
@@ -38,6 +40,20 @@ const upload = multer({
   limits: {
     fileSize: 5 * 1024 * 1024,
   },
+});
+
+const eventStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/events/");
+  },
+
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const uploadEvent = multer({
+  storage: eventStorage,
 });
 
 const app = express();
@@ -85,6 +101,8 @@ app.use(
 
 // Menyambungkan file statis HTML, CSS, JS dari folder 'public'
 app.use(express.static(path.join(__dirname, "public")));
+
+app.use("/uploads", express.static("uploads"));
 
 // ==========================================
 // KONEKSI DATABASE (MYSQL XAMPP)
@@ -190,7 +208,20 @@ app.post("/api/login", loginLimiter, (req, res) => {
       });
     }
 
-    // Simpan session
+    // MFA aktif
+    if (user.mfa_secret) {
+      return res.json({
+        status: "MFA_REQUIRED",
+        user: {
+          fullname: user.nama,
+          nim: user.nim,
+          email: user.email,
+          role: user.role,
+        },
+      });
+    }
+
+    // Jika MFA tidak aktif
     req.session.user = {
       fullname: user.nama,
       nim: user.nim,
@@ -1125,6 +1156,385 @@ app.put("/api/reset-password", async (req, res) => {
       });
     },
   );
+});
+
+app.post("/api/mfa/setup", async (req, res) => {
+  try {
+    console.log("=== MFA SETUP DIPANGGIL ===");
+
+    const { email } = req.body;
+
+    console.log("EMAIL:", email);
+
+    const secret = speakeasy.generateSecret({
+      name: `PoliTalk (${email})`,
+    });
+
+    console.log("SECRET BERHASIL");
+
+    const qrCode = await QRCode.toDataURL(secret.otpauth_url);
+
+    console.log("QR BERHASIL");
+
+    db.query(
+      "UPDATE pengguna SET mfa_secret=? WHERE email=?",
+      [secret.base32, email],
+      (err) => {
+        if (err) {
+          console.log("DB ERROR:", err);
+
+          return res.status(500).json({
+            status: "Gagal",
+            pesan: err.message,
+          });
+        }
+
+        console.log("UPDATE BERHASIL");
+
+        res.json({
+          status: "Sukses",
+          qrCode,
+        });
+      },
+    );
+  } catch (error) {
+    console.log("MFA ERROR:", error);
+
+    return res.status(500).json({
+      status: "Gagal",
+      pesan: error.message,
+    });
+  }
+});
+
+app.get("/api/test-mfa", (req, res) => {
+  res.send("MFA OK");
+});
+
+app.post("/api/mfa/verify", (req, res) => {
+  const { email, token } = req.body;
+
+  db.query(
+    "SELECT mfa_secret FROM pengguna WHERE email=?",
+    [email],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({
+          status: "Gagal",
+          pesan: err.message,
+        });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({
+          status: "Gagal",
+          pesan: "User tidak ditemukan",
+        });
+      }
+
+      const verified = speakeasy.totp.verify({
+        secret: results[0].mfa_secret,
+        encoding: "base32",
+        token: token,
+        window: 1,
+      });
+
+      if (verified) {
+        return res.json({
+          status: "Sukses",
+          pesan: "OTP valid",
+        });
+      }
+
+      return res.status(401).json({
+        status: "Gagal",
+        pesan: "OTP salah",
+      });
+    },
+  );
+});
+
+app.get("/api/mfa/status/:email", (req, res) => {
+  const email = req.params.email;
+
+  db.query(
+    "SELECT mfa_secret FROM pengguna WHERE email=?",
+    [email],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({
+          status: "Gagal",
+          pesan: err.message,
+        });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({
+          status: "Gagal",
+          pesan: "User tidak ditemukan",
+        });
+      }
+
+      res.json({
+        status: "Sukses",
+        enabled: !!results[0].mfa_secret,
+      });
+    },
+  );
+});
+
+app.post("/api/mfa/disable", (req, res) => {
+  const { email, token } = req.body;
+
+  db.query(
+    "SELECT mfa_secret FROM pengguna WHERE email=?",
+    [email],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({
+          status: "Gagal",
+          pesan: err.message,
+        });
+      }
+
+      const verified = speakeasy.totp.verify({
+        secret: results[0].mfa_secret,
+        encoding: "base32",
+        token,
+        window: 1,
+      });
+
+      if (!verified) {
+        return res.status(401).json({
+          status: "Gagal",
+          pesan: "OTP salah",
+        });
+      }
+
+      db.query(
+        "UPDATE pengguna SET mfa_secret=NULL WHERE email=?",
+        [email],
+        (err2) => {
+          if (err2) {
+            return res.status(500).json({
+              status: "Gagal",
+              pesan: err2.message,
+            });
+          }
+
+          res.json({
+            status: "Sukses",
+            pesan: "MFA berhasil dinonaktifkan",
+          });
+        },
+      );
+    },
+  );
+});
+
+app.post("/api/change-password", async (req, res) => {
+  try {
+    const { email, currentPassword, newPassword } = req.body;
+
+    db.query(
+      "SELECT password FROM pengguna WHERE email=?",
+      [email],
+      async (err, results) => {
+        if (err) {
+          return res.status(500).json({
+            status: "Gagal",
+            pesan: err.message,
+          });
+        }
+
+        if (results.length === 0) {
+          return res.status(404).json({
+            status: "Gagal",
+            pesan: "User tidak ditemukan",
+          });
+        }
+
+        const cocok = await bcrypt.compare(
+          currentPassword,
+          results[0].password,
+        );
+
+        if (!cocok) {
+          return res.status(401).json({
+            status: "Gagal",
+            pesan: "Password lama salah",
+          });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        db.query(
+          "UPDATE pengguna SET password=? WHERE email=?",
+          [hashedPassword, email],
+          (err) => {
+            if (err) {
+              return res.status(500).json({
+                status: "Gagal",
+                pesan: err.message,
+              });
+            }
+
+            return res.json({
+              status: "Sukses",
+              pesan: "Password berhasil diubah",
+            });
+          },
+        );
+      },
+    );
+  } catch (error) {
+    return res.status(500).json({
+      status: "Gagal",
+      pesan: error.message,
+    });
+  }
+});
+
+app.post("/api/events", uploadEvent.single("gambar"), (req, res) => {
+  const {
+    creator_email,
+    judul,
+    deskripsi,
+    kategori,
+    tanggal,
+    jam_mulai,
+    jam_selesai,
+    lokasi,
+  } = req.body;
+
+  const gambar = req.file ? req.file.filename : null;
+
+  const sql = `
+    INSERT INTO events
+    (
+      creator_email,
+      judul,
+      deskripsi,
+      kategori,
+      tanggal,
+      jam_mulai,
+      jam_selesai,
+      lokasi,
+      gambar
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(
+    sql,
+    [
+      creator_email,
+      judul,
+      deskripsi,
+      kategori,
+      tanggal,
+      jam_mulai,
+      jam_selesai,
+      lokasi,
+      gambar,
+    ],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+
+        return res.status(500).json({
+          success: false,
+          message: "Gagal membuat event",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Event berhasil dibuat",
+      });
+    },
+  );
+});
+
+app.get("/api/events", (req, res) => {
+  const sql = `
+    SELECT
+      e.*,
+      COUNT(ep.id) AS total_peserta
+    FROM events e
+    LEFT JOIN event_participants ep
+      ON e.id = ep.event_id
+    GROUP BY e.id
+    ORDER BY e.tanggal ASC
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("Gagal mengambil event:", err);
+
+      return res.status(500).json({
+        success: false,
+        message: "Gagal mengambil data event",
+      });
+    }
+
+    res.json(result);
+  });
+});
+
+app.post("/api/events/:id/join", (req, res) => {
+  const eventId = req.params.id;
+  const { email } = req.body;
+
+  const checkSql = `
+    SELECT *
+    FROM event_participants
+    WHERE event_id = ?
+    AND email = ?
+  `;
+
+  db.query(checkSql, [eventId, email], (err, rows) => {
+    if (err) {
+      console.error(err);
+
+      return res.status(500).json({
+        success: false,
+        message: "Database error",
+      });
+    }
+
+    if (rows.length > 0) {
+      return res.json({
+        success: false,
+        message: "Kamu sudah mengikuti event ini",
+      });
+    }
+
+    const insertSql = `
+      INSERT INTO event_participants
+      (
+        event_id,
+        email
+      )
+      VALUES (?, ?)
+    `;
+
+    db.query(insertSql, [eventId, email], (err2) => {
+      if (err2) {
+        console.error(err2);
+
+        return res.status(500).json({
+          success: false,
+          message: "Gagal mengikuti event",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Berhasil mengikuti event 🎉",
+      });
+    });
+  });
 });
 
 // ==========================================

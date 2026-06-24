@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verifikasi MFA - PoliTalk</title>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        width: 350px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+      }
+
+      p {
+        color: #666;
+        margin-bottom: 20px;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        font-size: 18px;
+        text-align: center;
+        margin-bottom: 15px;
+        box-sizing: border-box;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+
+      button:hover {
+        background: #1d4ed8;
+      }
+
+      .email {
+        font-size: 14px;
+        color: #888;
+        margin-bottom: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Verifikasi MFA</h2>
+
+      <div class="email" id="user-email"></div>
+
+      <p>Masukkan kode dari Google Authenticator</p>
+
+      <input type="text" id="token" maxlength="6" placeholder="123456" />
+
+      <button onclick="verifyMFA()">Verifikasi</button>
+    </div>
+
+    <script>
+      const pendingUser = JSON.parse(localStorage.getItem("pendingUser"));
+
+      if (!pendingUser) {
+        alert("Session login tidak ditemukan");
+
+        window.location.href = "index.html";
+      }
+
+      document.getElementById("user-email").innerText = pendingUser.email;
+
+      async function verifyMFA() {
+        const token = document.getElementById("token").value.trim();
+
+        if (token.length !== 6) {
+          alert("OTP harus 6 digit");
+
+          return;
+        }
+
+        try {
+          const response = await fetch("http://localhost:3000/api/mfa/verify", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: pendingUser.email,
+              token: token,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.status === "Sukses") {
+            localStorage.setItem("userActive", JSON.stringify(pendingUser));
+
+            localStorage.removeItem("pendingUser");
+
+            alert("MFA berhasil!");
+
+            window.location.href = "feed.html";
+          } else {
+            alert(data.pesan || "OTP Salah");
+          }
+        } catch (err) {
+          console.error(err);
+
+          alert("Gagal terhubung ke server");
+        }
+      }
+    </script>
+  </body>
+</html>

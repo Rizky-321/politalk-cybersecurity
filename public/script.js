@@ -22,19 +22,38 @@ function generateInitials(name) {
 }
 
 async function handleLogin(event) {
-  console.log("login clicked");
-
   event.preventDefault();
+
   const email = document.getElementById("login-email").value;
+
   const password = document.getElementById("login-password").value;
+
   try {
     const response = await fetch(`${API_URL}/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
     });
+
     const data = await response.json();
-    console.log(JSON.stringify(data, null, 2));
+
+    console.log(data);
+
+    // User wajib MFA
+    if (data.status === "MFA_REQUIRED") {
+      localStorage.setItem("pendingUser", JSON.stringify(data.user));
+
+      window.location.href = "verify-mfa.html";
+
+      return;
+    }
+
+    // Login biasa
     if (response.ok) {
       const userWithInitials = {
         ...data.user,
@@ -42,12 +61,15 @@ async function handleLogin(event) {
       };
 
       localStorage.setItem("userActive", JSON.stringify(userWithInitials));
+
       window.location.href = "feed.html";
     } else {
       alert(data.pesan || "Login gagal");
     }
   } catch (err) {
     console.error(err);
+
+    alert("Gagal terhubung ke server");
   }
 }
 
@@ -1581,6 +1603,557 @@ function togglePassword(inputId, eyeId) {
   }
 }
 
+async function enableMFA() {
+  const user = JSON.parse(localStorage.getItem("userActive"));
+
+  try {
+    const response = await fetch("http://localhost:3000/api/mfa/setup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: user.email,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data.status === "Sukses") {
+      const newWindow = window.open();
+
+      newWindow.document.write(`
+        <html>
+        <head>
+          <title>Aktivasi MFA</title>
+        </head>
+        <body style="
+          font-family:sans-serif;
+          text-align:center;
+          padding:30px;
+        ">
+          <h2>Scan QR Code Berikut</h2>
+
+          <img
+            src="${data.qrCode}"
+            width="300"
+          />
+
+          <p>
+            Scan menggunakan
+            Google Authenticator
+          </p>
+        </body>
+        </html>
+      `);
+    } else {
+      alert(data.pesan);
+    }
+  } catch (err) {
+    console.error(err);
+
+    alert("Gagal membuat MFA");
+  }
+}
+
+async function checkMFAStatus() {
+  const user = JSON.parse(localStorage.getItem("userActive"));
+
+  if (!user) return;
+
+  try {
+    const response = await fetch(`${API_URL}/mfa/status/${user.email}`);
+
+    const data = await response.json();
+
+    const status = document.getElementById("mfa-status");
+    const enableBtn = document.getElementById("btn-enable-mfa");
+    const disableBtn = document.getElementById("btn-disable-mfa");
+
+    // Untuk modal ganti password
+    const otpSection = document.getElementById("otpSection");
+
+    if (data.enabled) {
+      status.innerText = "MFA : Aktif ✅";
+      status.className = "text-sm font-bold text-green-600";
+
+      enableBtn.classList.add("hidden");
+      disableBtn.classList.remove("hidden");
+
+      // Tampilkan OTP di modal ganti password
+      if (otpSection) {
+        otpSection.classList.remove("hidden");
+      }
+    } else {
+      status.innerText = "MFA : Tidak Aktif ❌";
+      status.className = "text-sm font-bold text-red-500";
+
+      enableBtn.classList.remove("hidden");
+      disableBtn.classList.add("hidden");
+
+      // Sembunyikan OTP di modal ganti password
+      if (otpSection) {
+        otpSection.classList.add("hidden");
+      }
+    }
+  } catch (err) {
+    console.error("MFA Status Error:", err);
+  }
+}
+
+async function disableMFA() {
+  const otp = prompt("Masukkan OTP Google Authenticator");
+
+  if (!otp) return;
+
+  const user = JSON.parse(localStorage.getItem("userActive"));
+
+  try {
+    const response = await fetch(`${API_URL}/mfa/disable`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: user.email,
+        token: otp,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert("MFA berhasil dinonaktifkan");
+
+      checkMFAStatus();
+    } else {
+      alert(data.pesan);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function openChangePasswordModal() {
+  const modal = document.getElementById("changePasswordModal");
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+
+  checkMFAStatus();
+}
+
+function closeChangePasswordModal() {
+  const modal = document.getElementById("changePasswordModal");
+
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+async function submitChangePassword() {
+  const user = JSON.parse(localStorage.getItem("userActive"));
+
+  const currentPassword = document.getElementById("oldPassword").value;
+
+  const newPassword = document.getElementById("newPassword").value;
+
+  const confirmPassword = document.getElementById("confirmPassword").value;
+
+  if (newPassword !== confirmPassword) {
+    alert("Konfirmasi password tidak sama");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/change-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: user.email,
+        currentPassword,
+        newPassword,
+      }),
+    });
+
+    const data = await response.json();
+
+    alert(data.pesan);
+
+    if (data.status === "Sukses") {
+      closeChangePasswordModal();
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Terjadi kesalahan");
+  }
+}
+
+async function loadEvents() {
+  try {
+    const response = await fetch("http://localhost:3000/api/events");
+
+    const events = await response.json();
+
+    console.log(events);
+
+    const container = document.getElementById("event-container");
+
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    if (events.length === 0) {
+      container.innerHTML = `
+        <div
+          class="
+          bg-white
+          rounded-3xl
+          p-10
+          text-center
+          shadow
+        ">
+          <h2
+            class="
+            text-2xl
+            font-bold
+            text-slate-700
+          ">
+            Belum Ada Event
+          </h2>
+
+          <p
+            class="
+            text-slate-500
+            mt-2
+          ">
+            Jadilah yang pertama membuat event 🎉
+          </p>
+        </div>
+      `;
+
+      return;
+    }
+
+    events.forEach((event) => {
+      const poster = event.gambar
+        ? `
+          <img
+            src="http://localhost:3000/uploads/events/${event.gambar}"
+            alt="${event.judul}"
+            class="w-full h-full object-cover"
+          >
+        `
+        : `
+          <div
+            class="
+              w-full h-full
+              flex items-center justify-center
+              bg-slate-100 text-slate-400
+            "
+          >
+            Tidak ada poster
+          </div>
+        `;
+
+      const kategoriColor = {
+        Seminar: "bg-blue-100 text-blue-700",
+        Workshop: "bg-orange-100 text-orange-700",
+        Kompetisi: "bg-purple-100 text-purple-700",
+        Olahraga: "bg-green-100 text-green-700",
+      };
+
+      container.innerHTML += `
+      
+      <div
+        class="
+          bg-white
+          rounded-3xl
+          shadow-lg
+          hover:shadow-2xl
+          transition-all
+          duration-300
+          overflow-hidden
+          flex
+          border
+          border-slate-100
+        "
+      >
+
+        <!-- POSTER -->
+        <div
+          class="
+            w-[300px]
+            h-[230px]
+            flex-shrink-0
+            overflow-hidden
+          "
+        >
+          ${poster}
+        </div>
+
+        <!-- CONTENT -->
+        <div
+          class="
+            flex-1
+            p-6
+            flex
+            justify-between
+          "
+        >
+
+          <!-- KIRI -->
+          <div class="flex-1">
+
+            <span
+              class="
+                inline-block
+                px-3
+                py-1
+                rounded-full
+                text-xs
+                font-semibold
+                mb-3
+                ${kategoriColor[event.kategori] || "bg-slate-100 text-slate-700"}
+              "
+            >
+              ${event.kategori || "Event Kampus"}
+            </span>
+
+            <h2
+              class="
+                text-3xl
+                font-bold
+                text-slate-900
+                mb-2
+              "
+            >
+              ${event.judul}
+            </h2>
+
+            <p
+              class="
+                text-slate-600
+                mb-4
+              "
+            >
+              ${event.deskripsi}
+            </p>
+
+            <div class="space-y-2">
+
+              <div class="flex items-center gap-2 text-slate-600">
+                📅
+                <span>
+                  ${event.tanggal ? event.tanggal.split("T")[0] : "-"}
+                </span>
+              </div>
+
+              <div class="flex items-center gap-2 text-slate-600">
+                🕒
+                <span>
+                  ${event.jam_mulai || "--:--"}
+                  -
+                  ${event.jam_selesai || "--:--"}
+                </span>
+              </div>
+
+              <div class="flex items-center gap-2 text-slate-600">
+                📍
+                <span>
+                  ${event.lokasi}
+                </span>
+              </div>
+
+              <div class="flex items-center gap-2 text-slate-500 text-sm">
+                👤
+                <span>
+                  ${event.creator_email}
+                </span>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- KANAN -->
+          <div
+            class="
+              flex
+              flex-col
+              justify-between
+              items-end
+            "
+          >
+
+            <div
+              class="
+                border
+                border-blue-300
+                bg-blue-50
+                text-blue-700
+                px-5
+                py-2
+                rounded-xl
+                font-semibold
+              "
+            >
+              👥 ${event.total_peserta || 0} Peserta
+            </div>
+
+            <button
+              onclick="joinEvent(${event.id})"
+              class="
+                bg-gradient-to-r
+                from-blue-600
+                to-indigo-600
+                text-white
+                px-8
+                py-3
+                rounded-xl
+                font-semibold
+                shadow-lg
+                hover:scale-105
+                transition
+              "
+            >
+              Ikuti Event
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      `;
+    });
+  } catch (error) {
+    console.error("Gagal load event:", error);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.location.pathname.includes("event.html")) {
+    loadEvents();
+  }
+});
+
+function openCreateEventModal() {
+  const modal = document.getElementById("createEventModal");
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+function closeCreateEventModal() {
+  const modal = document.getElementById("createEventModal");
+
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+async function submitEvent() {
+  try {
+    const user = JSON.parse(localStorage.getItem("userActive"));
+
+    if (!user) {
+      alert("Silakan login terlebih dahulu");
+      return;
+    }
+
+    const judul = document.getElementById("eventTitle").value;
+    const deskripsi = document.getElementById("eventDescription").value;
+    const kategori = document.getElementById("eventCategory").value;
+
+    const tanggal = document.getElementById("eventDate").value;
+
+    const jam_mulai = document.getElementById("eventStartTime").value;
+
+    const jam_selesai = document.getElementById("eventEndTime").value;
+
+    const lokasi = document.getElementById("eventLocation").value;
+
+    const gambar = document.getElementById("eventImage").files[0];
+
+    if (!judul || !deskripsi || !tanggal || !lokasi) {
+      alert("Semua field wajib diisi");
+      return;
+    }
+
+    const formData = new FormData();
+
+    formData.append("creator_email", user.email);
+
+    formData.append("judul", judul);
+    formData.append("deskripsi", deskripsi);
+    formData.append("kategori", kategori);
+
+    formData.append("tanggal", tanggal);
+
+    formData.append("jam_mulai", jam_mulai);
+
+    formData.append("jam_selesai", jam_selesai);
+
+    formData.append("lokasi", lokasi);
+
+    if (gambar) {
+      formData.append("gambar", gambar);
+    }
+
+    const response = await fetch("http://localhost:3000/api/events", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    alert(result.message);
+
+    closeCreateEventModal();
+
+    loadEvents();
+  } catch (error) {
+    console.error(error);
+    alert("Gagal membuat event");
+  }
+}
+
+async function joinEvent(eventId) {
+  try {
+    const user = JSON.parse(localStorage.getItem("userActive"));
+
+    if (!user) {
+      alert("Silakan login terlebih dahulu");
+      return;
+    }
+
+    const response = await fetch(
+      `http://localhost:3000/api/events/${eventId}/join`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          email: user.email,
+        }),
+      },
+    );
+
+    const result = await response.json();
+
+    alert(result.message);
+  } catch (error) {
+    console.error(error);
+
+    alert("Gagal mengikuti event");
+  }
+}
+
 console.log("script loaded");
 console.log("SEBELUM LOADFEED");
 
@@ -1596,4 +2169,5 @@ console.log("SESUDAH LOADFEED");
 
 if (window.location.pathname.includes("profile")) {
   loadProfile();
+  checkMFAStatus();
 }
