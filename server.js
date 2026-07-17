@@ -107,6 +107,9 @@ app.use("/uploads", express.static("uploads"));
 // ==========================================
 // KONEKSI DATABASE (MYSQL XAMPP)
 // ==========================================
+console.log("DB_HOST =", process.env.DB_HOST || "localhost");
+console.log("DB_USER =", process.env.DB_USER || "root");
+console.log("DB_NAME =", process.env.DB_NAME || "politalk_db");
 const db = mysql.createConnection({
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
@@ -482,20 +485,62 @@ app.post("/api/posts", (req, res) => {
 // ==========================================
 app.get("/api/posts/:id", (req, res) => {
   const postId = req.params.id;
-  const sql = `
-        SELECT diskusi.*, pengguna.nama, pengguna.nim 
-        FROM diskusi 
-        JOIN pengguna ON diskusi.email_user = pengguna.email 
-        WHERE diskusi.id_post = ?`;
+  const email = req.query.email;
 
-  db.query(sql, [postId], (err, results) => {
-    if (err)
-      return res.status(500).json({ status: "Error", pesan: err.message });
-    if (results.length === 0)
-      return res
-        .status(404)
-        .json({ status: "Gagal", pesan: "Postingan tidak ditemukan" });
-    res.json({ status: "Sukses", data: results[0] });
+  const sql = `
+SELECT
+    diskusi.*,
+    pengguna.nama,
+    pengguna.nim,
+    pengguna.role,
+    pengguna.foto_profil,
+
+    COUNT(DISTINCT likes.id_like) AS likes,
+    COUNT(DISTINCT komentar.id_komentar) AS total_komentar,
+
+    MAX(
+        CASE
+            WHEN likes.email_user = ?
+            THEN 1
+            ELSE 0
+        END
+    ) AS liked
+
+FROM diskusi
+
+JOIN pengguna
+ON diskusi.email_user = pengguna.email
+
+LEFT JOIN likes
+ON likes.id_post = diskusi.id_post
+
+LEFT JOIN komentar
+ON komentar.id_post = diskusi.id_post
+
+WHERE diskusi.id_post = ?
+
+GROUP BY diskusi.id_post
+`;
+
+  db.query(sql, [email, postId], (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        status: "Error",
+        pesan: err.message,
+      });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        status: "Gagal",
+        pesan: "Postingan tidak ditemukan",
+      });
+    }
+
+    res.json({
+      status: "Sukses",
+      data: results[0],
+    });
   });
 });
 
@@ -1457,32 +1502,92 @@ app.post("/api/events", uploadEvent.single("gambar"), (req, res) => {
 });
 
 app.get("/api/events", (req, res) => {
-  const sql = `
-    SELECT
-      e.*,
-      COUNT(ep.id) AS total_peserta
-    FROM events e
-    LEFT JOIN event_participants ep
-      ON e.id = ep.event_id
-    GROUP BY e.id
-    ORDER BY e.tanggal ASC
+  const email = req.query.email;
+
+  // Hapus peserta event yang sudah berakhir
+  const deleteParticipants = `
+    DELETE ep
+    FROM event_participants ep
+    INNER JOIN events e
+      ON ep.event_id = e.id
+    WHERE
+      e.tanggal < CURDATE()
+      OR (
+        e.tanggal = CURDATE()
+        AND e.jam_selesai IS NOT NULL
+        AND e.jam_selesai < CURTIME()
+      )
   `;
 
-  db.query(sql, (err, result) => {
+  db.query(deleteParticipants, (err) => {
     if (err) {
-      console.error("Gagal mengambil event:", err);
-
-      return res.status(500).json({
-        success: false,
-        message: "Gagal mengambil data event",
-      });
+      console.error("Gagal hapus peserta:", err);
     }
 
-    res.json(result);
+    // Hapus event yang sudah berakhir
+    const deleteEvents = `
+      DELETE
+      FROM events
+      WHERE
+        tanggal < CURDATE()
+        OR (
+          tanggal = CURDATE()
+          AND jam_selesai IS NOT NULL
+          AND jam_selesai < CURTIME()
+        )
+    `;
+
+    db.query(deleteEvents, (err2) => {
+      if (err2) {
+        console.error("Gagal hapus event:", err2);
+      }
+
+      // Ambil event yang masih aktif
+      const sql = `
+        SELECT
+          e.*,
+          COUNT(DISTINCT ep.id) AS total_peserta,
+
+          CASE
+            WHEN EXISTS (
+              SELECT 1
+              FROM event_participants p
+              WHERE p.event_id = e.id
+              AND p.email = ?
+            )
+            THEN 1
+            ELSE 0
+          END AS joined
+
+        FROM events e
+
+        LEFT JOIN event_participants ep
+          ON e.id = ep.event_id
+
+        GROUP BY e.id
+
+        ORDER BY
+          e.tanggal ASC,
+          e.jam_mulai ASC
+      `;
+
+      db.query(sql, [email], (err3, result) => {
+        if (err3) {
+          console.error(err3);
+
+          return res.status(500).json({
+            success: false,
+            message: "Gagal mengambil event",
+          });
+        }
+
+        res.json(result);
+      });
+    });
   });
 });
 
-app.post("/api/events/:id/join", (req, res) => {
+app.post("/api/events/:id/toggle", (req, res) => {
   const eventId = req.params.id;
   const { email } = req.body;
 
@@ -1504,10 +1609,31 @@ app.post("/api/events/:id/join", (req, res) => {
     }
 
     if (rows.length > 0) {
-      return res.json({
-        success: false,
-        message: "Kamu sudah mengikuti event ini",
+      const deleteSql = `
+        DELETE
+        FROM event_participants
+        WHERE event_id = ?
+        AND email = ?
+      `;
+
+      db.query(deleteSql, [eventId, email], (err2) => {
+        if (err2) {
+          console.error(err2);
+
+          return res.status(500).json({
+            success: false,
+            message: "Gagal membatalkan keikutsertaan",
+          });
+        }
+
+        return res.json({
+          success: true,
+          joined: false,
+          message: "Berhasil membatalkan keikutsertaan",
+        });
       });
+
+      return;
     }
 
     const insertSql = `
@@ -1531,8 +1657,128 @@ app.post("/api/events/:id/join", (req, res) => {
 
       res.json({
         success: true,
+        joined: true,
         message: "Berhasil mengikuti event 🎉",
       });
+    });
+  });
+});
+
+app.get("/api/my-events", (req, res) => {
+  const email = req.query.email;
+
+  const sql = `
+      SELECT
+          e.id,
+          e.judul,
+          e.tanggal,
+          e.kategori
+
+      FROM events e
+
+      INNER JOIN event_participants ep
+          ON ep.event_id = e.id
+
+      WHERE
+          ep.email = ?
+
+      AND
+      (
+          e.tanggal > CURDATE()
+
+          OR
+          (
+              e.tanggal = CURDATE()
+
+              AND
+              (
+                  e.jam_selesai IS NULL
+                  OR e.jam_selesai >= CURTIME()
+              )
+          )
+      )
+
+      ORDER BY
+          e.tanggal ASC,
+          e.jam_mulai ASC
+
+      LIMIT 5
+  `;
+
+  db.query(sql, [email], (err, rows) => {
+    if (err) {
+      return res.status(500).json(err);
+    }
+
+    res.json(rows);
+  });
+});
+
+app.get("/api/trending", (req, res) => {
+  const email = req.query.email;
+
+  const sql = `
+SELECT
+    diskusi.*,
+    pengguna.nama,
+    pengguna.nim,
+    pengguna.role,
+    pengguna.foto_profil,
+
+    COUNT(DISTINCT likes.id_like) AS likes,
+    COUNT(DISTINCT komentar.id_komentar) AS total_komentar,
+
+    (
+        COUNT(DISTINCT likes.id_like) +
+        COUNT(DISTINCT komentar.id_komentar)
+    ) AS trending_score,
+
+    MAX(
+        CASE
+            WHEN likes.email_user = ?
+            THEN 1
+            ELSE 0
+        END
+    ) AS liked
+
+FROM diskusi
+
+JOIN pengguna
+ON pengguna.email = diskusi.email_user
+
+LEFT JOIN likes
+ON likes.id_post = diskusi.id_post
+
+LEFT JOIN komentar
+ON komentar.id_post = diskusi.id_post
+
+WHERE
+    MONTH(diskusi.dibuat_pada) = MONTH(CURDATE())
+    AND YEAR(diskusi.dibuat_pada) = YEAR(CURDATE())
+
+GROUP BY
+    diskusi.id_post
+
+ORDER BY
+    trending_score DESC,
+    likes DESC,
+    total_komentar DESC,
+    diskusi.dibuat_pada DESC
+
+LIMIT 5
+`;
+
+  db.query(sql, [email], (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        status: "Error",
+        pesan: err.message,
+      });
+    }
+
+    res.json({
+      status: "Sukses",
+      data: results,
     });
   });
 });
@@ -1540,6 +1786,6 @@ app.post("/api/events/:id/join", (req, res) => {
 // ==========================================
 // MENJALANKAN SERVER
 // ==========================================
-app.listen(PORT, () => {
-  console.log(`Server berjalan di port ${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server berjalan di http://10.244.141.22:${PORT}`);
 });

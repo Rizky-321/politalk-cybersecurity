@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000/api";
+const API_URL = "http://10.244.141.22:3000/api";
 
 let allPosts = [];
 let editingPostId = null;
@@ -337,7 +337,7 @@ async function loadFeed() {
       const isAdmin = user && user.role === "admin";
 
       const imgHtml = post.gambar
-        ? `<img src="http://localhost:3000${post.gambar}"
+        ? `<img src="http://10.244.141.22:3000${post.gambar}"
          class="w-full h-auto rounded-3xl my-4 border shadow-sm">`
         : "";
       // HAK AKSES POST: Muncul tombol hapus jika kiriman sendiri ATAU user adalah admin
@@ -491,6 +491,211 @@ async function loadFeed() {
     });
 
     syncStaticUI(user);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function loadTrendingFeed() {
+  const container = document.getElementById("feed-container");
+  if (!container) return;
+
+  const user = getActiveUser();
+
+  try {
+    const res = await fetch(`${API_URL}/trending?email=${user.email}`);
+    const result = await res.json();
+
+    const posts = result.data || [];
+
+    container.innerHTML = "";
+
+    if (posts.length === 0) {
+      container.innerHTML = `
+        <div class="bg-white rounded-3xl p-10 text-center shadow">
+          <h2 class="text-2xl font-bold text-blue-600">
+            🔥 Trending Bulan Ini
+          </h2>
+
+          <p class="text-slate-500 mt-3">
+            Belum ada postingan trending bulan ini.
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    posts.forEach((post) => {
+      const isMyPost = user && post.nim === user.nim;
+      const isAdmin = user && user.role === "admin";
+
+      const imgHtml = post.gambar
+        ? `<img src="http://10.244.141.22:3000${post.gambar}"
+            class="w-full h-auto rounded-3xl my-4 border shadow-sm">`
+        : "";
+
+      let actionButtonsHtml = "";
+
+      if (isMyPost) {
+        actionButtonsHtml = `
+          <div class="flex gap-2 ml-auto">
+
+            <button
+              onclick="openEditPostModal(${post.id_post})"
+              class="text-xs font-bold text-blue-500 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-xl">
+              ✏️ Edit
+            </button>
+
+            <button
+              onclick="handleDeletePost('${post.id_post}')"
+              class="text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 px-3 py-1.5 rounded-xl">
+              🗑️ Hapus
+            </button>
+
+          </div>
+        `;
+      } else if (isAdmin) {
+        actionButtonsHtml = `
+          <div class="flex gap-2 ml-auto">
+
+            <button
+              onclick="handleDeletePost('${post.id_post}')"
+              class="text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 px-3 py-1.5 rounded-xl">
+              🗑️ Hapus
+            </button>
+
+          </div>
+        `;
+      }
+
+      const card = `
+      <div class="bg-white p-6 rounded-3xl border border-blue-50 shadow-sm mb-6">
+
+        <div class="flex justify-between items-center mb-4">
+
+          <div class="flex gap-3">
+
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold">
+
+                ${generateInitials(post.nama)}
+
+            </div>
+
+            <div>
+
+              <h4 class="font-bold flex items-center gap-2">
+
+                ${post.nama}
+
+                ${
+                  post.role === "admin"
+                    ? `
+                      <span class="bg-yellow-100 text-yellow-700 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                        👑 ADMIN
+                      </span>
+                    `
+                    : ""
+                }
+
+              </h4>
+
+              <p class="text-xs text-slate-500">
+                ${post.nim}
+              </p>
+
+              <p class="text-xs text-slate-400">
+                ${new Date(post.dibuat_pada).toLocaleString("id-ID")}
+              </p>
+
+            </div>
+
+          </div>
+
+          ${actionButtonsHtml}
+
+        </div>
+
+        <h3 class="font-bold text-lg mb-2">
+          ${post.judul}
+        </h3>
+
+        <p class="text-slate-600">
+          ${post.konten}
+        </p>
+
+        ${imgHtml}
+
+        <div class="flex items-center gap-4 mt-4 mb-4">
+
+          <button
+            id="like-btn-${post.id_post}"
+            onclick="toggleLike(${post.id_post})"
+            class="px-4 py-2 rounded-xl font-semibold hover:bg-pink-100
+            ${
+              post.liked
+                ? "bg-pink-100 text-pink-600"
+                : "bg-slate-100 text-slate-500"
+            }">
+
+            <span id="like-count-${post.id_post}">
+              ${post.likes || 0}
+            </span>
+
+            ${post.liked ? "❤️" : "🤍"}
+
+          </button>
+
+          <div class="px-4 py-2 bg-slate-50 rounded-xl text-slate-600">
+
+            💬
+
+            <span id="comment-count-${post.id_post}">
+              ${post.total_komentar || 0}
+            </span>
+
+          </div>
+
+        </div>
+
+        <div class="mt-4 border-t pt-4">
+
+          <div
+            id="comments-${post.id_post}"
+            class="space-y-2 mb-3">
+
+            <p class="text-xs text-slate-400">
+              Memuat komentar...
+            </p>
+
+          </div>
+
+          <div class="flex gap-2">
+
+            <input
+              id="comment-input-${post.id_post}"
+              type="text"
+              placeholder="Tulis komentar..."
+              class="flex-1 border rounded-xl px-3 py-2 text-sm">
+
+            <button
+              onclick="submitComment(${post.id_post})"
+              class="bg-blue-600 text-white px-4 rounded-xl">
+
+              Kirim
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+      `;
+
+      container.insertAdjacentHTML("beforeend", card);
+
+      loadComments(post.id_post);
+    });
   } catch (err) {
     console.error(err);
   }
@@ -1173,7 +1378,7 @@ async function loadMyPosts() {
       const imgHtml = post.gambar
         ? `
           <img
-            src="http://localhost:3000${post.gambar}"
+            src="http://10.244.141.22:3000${post.gambar}"
             class="w-full h-auto rounded-3xl my-4 border shadow-sm"
           >
         `
@@ -1607,7 +1812,7 @@ async function enableMFA() {
   const user = JSON.parse(localStorage.getItem("userActive"));
 
   try {
-    const response = await fetch("http://localhost:3000/api/mfa/setup", {
+    const response = await fetch("http://10.244.141.22:3000/api/mfa/setup", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1789,14 +1994,15 @@ async function submitChangePassword() {
     alert("Terjadi kesalahan");
   }
 }
-
 async function loadEvents() {
   try {
-    const response = await fetch("http://localhost:3000/api/events");
+    const user = getActiveUser();
+
+    const response = await fetch(
+      `http://10.244.141.22:3000/api/events?email=${user.email}`,
+    );
 
     const events = await response.json();
-
-    console.log(events);
 
     const container = document.getElementById("event-container");
 
@@ -1806,33 +2012,16 @@ async function loadEvents() {
 
     if (events.length === 0) {
       container.innerHTML = `
-        <div
-          class="
-          bg-white
-          rounded-3xl
-          p-10
-          text-center
-          shadow
-        ">
-          <h2
-            class="
-            text-2xl
-            font-bold
-            text-slate-700
-          ">
+        <div class="bg-white rounded-3xl p-10 text-center shadow">
+          <h2 class="text-2xl font-bold text-slate-700">
             Belum Ada Event
           </h2>
 
-          <p
-            class="
-            text-slate-500
-            mt-2
-          ">
+          <p class="text-slate-500 mt-2">
             Jadilah yang pertama membuat event 🎉
           </p>
         </div>
       `;
-
       return;
     }
 
@@ -1840,19 +2029,12 @@ async function loadEvents() {
       const poster = event.gambar
         ? `
           <img
-            src="http://localhost:3000/uploads/events/${event.gambar}"
-            alt="${event.judul}"
+            src="http://10.244.141.22:3000/uploads/events/${event.gambar}"
             class="w-full h-full object-cover"
           >
         `
         : `
-          <div
-            class="
-              w-full h-full
-              flex items-center justify-center
-              bg-slate-100 text-slate-400
-            "
-          >
+          <div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
             Tidak ada poster
           </div>
         `;
@@ -1864,8 +2046,9 @@ async function loadEvents() {
         Olahraga: "bg-green-100 text-green-700",
       };
 
+      const sudahJoin = Number(event.joined) === 1;
+
       container.innerHTML += `
-      
       <div
         class="
           bg-white
@@ -1881,29 +2064,12 @@ async function loadEvents() {
         "
       >
 
-        <!-- POSTER -->
-        <div
-          class="
-            w-[300px]
-            h-[230px]
-            flex-shrink-0
-            overflow-hidden
-          "
-        >
+        <div class="w-[300px] h-[230px] overflow-hidden flex-shrink-0">
           ${poster}
         </div>
 
-        <!-- CONTENT -->
-        <div
-          class="
-            flex-1
-            p-6
-            flex
-            justify-between
-          "
-        >
+        <div class="flex-1 p-6 flex justify-between">
 
-          <!-- KIRI -->
           <div class="flex-1">
 
             <span
@@ -1921,71 +2087,37 @@ async function loadEvents() {
               ${event.kategori || "Event Kampus"}
             </span>
 
-            <h2
-              class="
-                text-3xl
-                font-bold
-                text-slate-900
-                mb-2
-              "
-            >
+            <h2 class="text-3xl font-bold mb-2">
               ${event.judul}
             </h2>
 
-            <p
-              class="
-                text-slate-600
-                mb-4
-              "
-            >
+            <p class="text-slate-600 mb-4">
               ${event.deskripsi}
             </p>
 
             <div class="space-y-2">
 
-              <div class="flex items-center gap-2 text-slate-600">
-                📅
-                <span>
-                  ${event.tanggal ? event.tanggal.split("T")[0] : "-"}
-                </span>
+              <div>
+                📅 ${event.tanggal ? event.tanggal.split("T")[0] : "-"}
               </div>
 
-              <div class="flex items-center gap-2 text-slate-600">
-                🕒
-                <span>
-                  ${event.jam_mulai || "--:--"}
-                  -
-                  ${event.jam_selesai || "--:--"}
-                </span>
+              <div>
+                🕒 ${event.jam_mulai || "--:--"} - ${event.jam_selesai || "--:--"}
               </div>
 
-              <div class="flex items-center gap-2 text-slate-600">
-                📍
-                <span>
-                  ${event.lokasi}
-                </span>
+              <div>
+                📍 ${event.lokasi}
               </div>
 
-              <div class="flex items-center gap-2 text-slate-500 text-sm">
-                👤
-                <span>
-                  ${event.creator_email}
-                </span>
+              <div class="text-sm text-slate-500">
+                👤 ${event.creator_email}
               </div>
 
             </div>
 
           </div>
 
-          <!-- KANAN -->
-          <div
-            class="
-              flex
-              flex-col
-              justify-between
-              items-end
-            "
-          >
+          <div class="flex flex-col justify-between items-end">
 
             <div
               class="
@@ -2002,31 +2134,54 @@ async function loadEvents() {
               👥 ${event.total_peserta || 0} Peserta
             </div>
 
-            <button
-              onclick="joinEvent(${event.id})"
-              class="
-                bg-gradient-to-r
-                from-blue-600
-                to-indigo-600
-                text-white
-                px-8
-                py-3
-                rounded-xl
-                font-semibold
-                shadow-lg
-                hover:scale-105
-                transition
-              "
-            >
-              Ikuti Event
-            </button>
+            ${
+              sudahJoin
+                ? `
+                  <button
+                    onclick="toggleJoinEvent(${event.id})"
+                    class="
+                      bg-green-600
+                      hover:bg-red-600
+                      text-white
+                      px-8
+                      py-3
+                      rounded-xl
+                      font-semibold
+                      shadow-lg
+                      transition
+                    "
+                    title="Klik untuk membatalkan keikutsertaan"
+                  >
+                    ✓ Mengikuti
+                  </button>
+                `
+                : `
+                  <button
+                    onclick="toggleJoinEvent(${event.id})"
+                    class="
+                      bg-gradient-to-r
+                      from-blue-600
+                      to-indigo-600
+                      text-white
+                      px-8
+                      py-3
+                      rounded-xl
+                      font-semibold
+                      shadow-lg
+                      hover:scale-105
+                      transition
+                    "
+                  >
+                    Ikuti Event
+                  </button>
+                `
+            }
 
           </div>
 
         </div>
 
       </div>
-
       `;
     });
   } catch (error) {
@@ -2102,7 +2257,7 @@ async function submitEvent() {
       formData.append("gambar", gambar);
     }
 
-    const response = await fetch("http://localhost:3000/api/events", {
+    const response = await fetch("http://10.244.141.22:3000/api/events", {
       method: "POST",
       body: formData,
     });
@@ -2120,9 +2275,9 @@ async function submitEvent() {
   }
 }
 
-async function joinEvent(eventId) {
+async function toggleJoinEvent(eventId) {
   try {
-    const user = JSON.parse(localStorage.getItem("userActive"));
+    const user = getActiveUser();
 
     if (!user) {
       alert("Silakan login terlebih dahulu");
@@ -2130,7 +2285,7 @@ async function joinEvent(eventId) {
     }
 
     const response = await fetch(
-      `http://localhost:3000/api/events/${eventId}/join`,
+      `http://10.244.141.22:3000/api/events/${eventId}/toggle`,
       {
         method: "POST",
 
@@ -2147,10 +2302,137 @@ async function joinEvent(eventId) {
     const result = await response.json();
 
     alert(result.message);
+
+    loadEvents();
   } catch (error) {
     console.error(error);
 
-    alert("Gagal mengikuti event");
+    alert("Terjadi kesalahan");
+  }
+}
+
+async function loadSidebarEvents() {
+  const user = getActiveUser();
+
+  if (!user) return;
+
+  try {
+    const res = await fetch(`${API_URL}/my-events?email=${user.email}`);
+    const events = await res.json();
+
+    const container = document.getElementById("sidebar-events");
+
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    if (events.length === 0) {
+      container.innerHTML = `
+        <div class="text-xs text-slate-400">
+          Belum mengikuti event
+        </div>
+      `;
+      return;
+    }
+
+    events.forEach((event) => {
+      container.innerHTML += `
+        <div
+          onclick="window.location.href='event.html'"
+          class="p-3 rounded-xl bg-blue-50 border border-blue-100 cursor-pointer hover:bg-blue-100 hover:shadow-md transition-all duration-200">
+
+          <p class="text-xs font-bold text-slate-800">
+            ${event.judul}
+          </p>
+
+          <p class="text-[11px] text-slate-500 mt-1">
+            📅 ${event.tanggal.split("T")[0]}
+          </p>
+
+        </div>
+      `;
+    });
+  } catch (err) {
+    console.error("Gagal memuat event sidebar:", err);
+  }
+}
+
+async function loadTrending() {
+  try {
+    const res = await fetch(`${API_URL}/trending`);
+
+    const result = await res.json();
+
+    const data = result.data;
+
+    const container = document.getElementById("trending-container");
+
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    if (data.length === 0) {
+      container.innerHTML = `
+                <p class="text-xs text-slate-400">
+                    Belum ada trending bulan ini
+                </p>
+            `;
+
+      return;
+    }
+
+    data.forEach((post, index) => {
+      let medal = `${index + 1}.`;
+
+      if (index === 0) medal = "🥇";
+      if (index === 1) medal = "🥈";
+      if (index === 2) medal = "🥉";
+
+      container.innerHTML += `
+
+                <div
+                class="bg-slate-50 rounded-xl p-3 hover:bg-blue-50 transition cursor-pointer"
+                onclick="window.location.href='trending.html?id=${post.id_post}'"
+                >
+
+                    <div class="font-bold text-sm">
+
+                        ${medal}
+                        ${post.judul}
+
+                    </div>
+
+                    <div class="flex items-center gap-2 mt-2">
+
+                        <div
+                            class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+
+                            ${post.nama.charAt(0).toUpperCase()}
+
+                        </div>
+
+                        <div class="text-xs text-slate-500">
+                            ${post.nama}
+                        </div>
+
+                    </div>
+
+                    <div
+                    class="flex gap-4 text-xs mt-2 text-slate-600"
+                    >
+
+                        ❤️ ${post.likes}
+
+                        💬 ${post.total_komentar}
+
+                    </div>
+
+                </div>
+
+            `;
+    });
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -2158,16 +2440,38 @@ console.log("script loaded");
 console.log("SEBELUM LOADFEED");
 
 document.addEventListener("DOMContentLoaded", () => {
-  protectAdminPage();
-  loadUsers();
+  const page = window.location.pathname;
+
+  // ===========================
+  // FEED
+  // ===========================
+  if (page.includes("feed.html")) {
+    loadFeed();
+    loadSidebarEvents();
+    loadTrending(); // widget kanan
+  }
+
+  // ===========================
+  // TRENDING PAGE
+  // ===========================
+  if (page.includes("trending.html")) {
+    loadTrendingFeed();
+  }
+
+  // ===========================
+  // PROFILE
+  // ===========================
+  if (page.includes("profile.html")) {
+    loadProfile();
+    checkMFAStatus();
+  }
+
+  // ===========================
+  // ADMIN
+  // ===========================
+  if (document.getElementById("user-table")) {
+    protectAdminPage();
+    loadUsers();
+    setupAdminMenu();
+  }
 });
-
-loadFeed();
-setupAdminMenu();
-
-console.log("SESUDAH LOADFEED");
-
-if (window.location.pathname.includes("profile")) {
-  loadProfile();
-  checkMFAStatus();
-}
